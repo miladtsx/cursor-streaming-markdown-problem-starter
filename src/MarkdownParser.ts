@@ -72,10 +72,9 @@ class MarkdownParser {
     this.elements = [
       new CodeBlockElement(this),
       new InlineCodeElement(this),
-      new ItalicElement(this),
       new HeadingElement(this),
-      new BoldElement(this),
       new UnorderedListElement(this),
+      new EmphasisElement(this), // Add the new EmphasisElement
     ];
   }
 
@@ -256,50 +255,6 @@ class InlineCodeElement implements MarkdownElement {
   }
 }
 
-class ItalicElement implements MarkdownElement {
-  private isItalic = false;
-  private currentItalicText = '';
-  private parser: MarkdownParser;
-
-  constructor(parser: MarkdownParser) {
-    this.parser = parser;
-  }
-
-  type = 'italic';
-
-  process(char: string): boolean {
-    if (char === '*') {
-      if (this.isItalic) {
-        this.closeItalic();
-      } else {
-        this.isItalic = true;
-      }
-      return true;
-    }
-    if (this.isItalic) {
-      this.currentItalicText += char;
-      return true;
-    }
-    return false;
-  }
-
-  isActive() {
-    return this.isItalic;
-  }
-
-  reset() {
-    this.isItalic = false;
-    this.currentItalicText = '';
-  }
-
-  private closeItalic() {
-    const em = document.createElement('em');
-    em.innerText = this.currentItalicText;
-    this.parser.appendElement(em);
-    this.reset();
-  }
-}
-
 class HeadingElement implements MarkdownElement {
   private isHeading = false;
   private headingLevel = 0;
@@ -346,55 +301,6 @@ class HeadingElement implements MarkdownElement {
     const heading = document.createElement(`h${this.headingLevel}`);
     heading.innerText = this.currentHeadingText.trim();
     this.parser.appendElement(heading);
-    this.reset();
-  }
-}
-
-class BoldElement implements MarkdownElement {
-  private isBold = false;
-  private currentBoldText = '';
-  private parser: MarkdownParser;
-
-  constructor(parser: MarkdownParser) {
-    this.parser = parser;
-  }
-
-  type = 'bold';
-
-  process(char: string): boolean {
-    const lastSixChars = this.parser.getLastSixChars();
-    
-    if (lastSixChars.endsWith('**')) {
-      if (this.isBold) {
-        this.closeBold();
-        return true;
-      } else {
-        this.isBold = true;
-        return true;
-      }
-    }
-    
-    if (this.isBold) {
-      this.currentBoldText += char;
-      return true;
-    }
-    
-    return false;
-  }
-
-  isActive() {
-    return this.isBold;
-  }
-
-  reset() {
-    this.isBold = false;
-    this.currentBoldText = '';
-  }
-
-  private closeBold() {
-    const strong = document.createElement('strong');
-    strong.innerText = this.currentBoldText.slice(0, -1); // Remove the last character (second asterisk)
-    this.parser.appendElement(strong);
     this.reset();
   }
 }
@@ -449,6 +355,78 @@ class UnorderedListElement implements MarkdownElement {
     }
     
     (ul as HTMLElement).appendChild(li);
+    this.reset();
+  }
+}
+
+class EmphasisElement implements MarkdownElement {
+  private isEmphasis = false;
+  private emphasisType: 'italic' | 'bold' | null = null;
+  private currentEmphasisText = '';
+  private parser: MarkdownParser;
+
+  constructor(parser: MarkdownParser) {
+    this.parser = parser;
+  }
+
+  type = 'emphasis';
+
+  process(char: string): boolean {
+    const lastSixChars = this.parser.getLastSixChars();
+    if (this.isEmphasis) {
+
+        if(this.emphasisType === 'italic' && lastSixChars.endsWith('**')) {
+            this.emphasisType = 'bold';
+        }
+        
+      if (this.emphasisType === 'italic' && char === '*') {
+        this.closeEmphasis();
+        return true;
+      } else if (this.emphasisType === 'bold' && this.currentEmphasisText.endsWith('*') && char === '*') {
+        this.closeEmphasis();
+        return true;
+      }
+      this.currentEmphasisText += char;
+      return true;
+    } else if (char === '*') {
+      if (lastSixChars.endsWith('**')) {
+        this.isEmphasis = true;
+        this.emphasisType = 'bold';
+        console.log('bold');
+        this.currentEmphasisText = '*'; // Start with one '*' since the second '*' is the current char
+        return true;
+      } else if (lastSixChars.endsWith('*')) {
+        this.isEmphasis = true;
+        this.emphasisType = 'italic';
+        console.log('italic');
+        return true;
+      }
+    }
+    return false;
+  }
+
+  isActive() {
+    return this.isEmphasis;
+  }
+
+  reset() {
+    this.isEmphasis = false;
+    this.emphasisType = null;
+    this.currentEmphasisText = '';
+  }
+
+  private closeEmphasis() {
+    const span = document.createElement('span');
+    span.style.fontStyle = this.emphasisType === 'italic' ? 'italic' : 'normal';
+    span.style.fontWeight = this.emphasisType === 'bold' ? 'bold' : 'normal';
+    
+    // Adjust the slicing to remove the initial '*' for bold text
+    const textToDisplay = this.emphasisType === 'bold' 
+      ? this.currentEmphasisText.slice(1, -1).trim() // Remove the leading '*' and trailing '**'
+      : this.currentEmphasisText.slice(0, -1).trim(); // Remove the trailing '*'
+    
+    span.innerText = textToDisplay;
+    this.parser.appendElement(span);
     this.reset();
   }
 }
