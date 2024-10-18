@@ -152,7 +152,7 @@ class CodeBlockElement implements MarkdownElement {
         return true;
       }
       return true;
-    } 
+    }
     // Detect code block opening pattern
     else if (this.parser.getLastSixChars().endsWith('```')) {
       this.isCodeBlock = true;
@@ -347,13 +347,13 @@ class UnorderedListElement implements MarkdownElement {
 
     const li = document.createElement('li');
     li.innerText = this.currentListItem.trim();
-    
+
     let ul = this.parser.currentContainer.lastElementChild;
     if (!ul || ul.tagName !== 'UL') {
       ul = document.createElement('ul');
       this.parser.appendElement(ul as HTMLElement);
     }
-    
+
     (ul as HTMLElement).appendChild(li);
     this.reset();
   }
@@ -375,10 +375,10 @@ class EmphasisElement implements MarkdownElement {
     const lastSixChars = this.parser.getLastSixChars();
     if (this.isEmphasis) {
 
-        if(this.emphasisType === 'italic' && lastSixChars.endsWith('**')) {
-            this.emphasisType = 'bold';
-        }
-        
+      if (this.emphasisType === 'italic' && lastSixChars.endsWith('**')) {
+        this.emphasisType = 'bold';
+      }
+
       if (this.emphasisType === 'italic' && char === '*') {
         this.closeEmphasis();
         return true;
@@ -419,12 +419,12 @@ class EmphasisElement implements MarkdownElement {
     const span = document.createElement('span');
     span.style.fontStyle = this.emphasisType === 'italic' ? 'italic' : 'normal';
     span.style.fontWeight = this.emphasisType === 'bold' ? 'bold' : 'normal';
-    
+
     // Adjust the slicing to remove the initial '*' for bold text
-    const textToDisplay = this.emphasisType === 'bold' 
+    const textToDisplay = this.emphasisType === 'bold'
       ? this.currentEmphasisText.slice(1, -1).trim() // Remove the leading '*' and trailing '**'
       : this.currentEmphasisText.slice(0, -1).trim(); // Remove the trailing '*'
-    
+
     span.innerText = textToDisplay;
     this.parser.appendElement(span);
     this.reset();
