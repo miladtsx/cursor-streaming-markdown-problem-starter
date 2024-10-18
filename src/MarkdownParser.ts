@@ -210,21 +210,6 @@ function runStream() {
   }, 20);
 }
 
-let isCodeBlock = false;
-let isInlineCode = false;
-let currentCodeBlock: string = '';
-let currentInlineCode: string = '';
-let lastSixChars: string = ''; // Memory for the last six characters to detect code blocks
-let isItalic = false;
-let currentItalicText = '';
-let isHeading = false;
-let headingLevel = 0;
-let currentHeadingText = '';
-let isBold = false;
-let currentBoldText = '';
-let isUnorderedList = false;
-let currentListItem = '';
-
 class InlineCodeElement implements MarkdownElement {
   private isInlineCode = false;
   private currentInlineCode = '';
